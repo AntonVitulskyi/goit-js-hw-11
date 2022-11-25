@@ -38,6 +38,8 @@ const createGalleryCards = (array) => {
   }).join('');
 }
 
+const gallery = new SimpleLightbox('.gallery a', {captionsData:"alt", captionDelay: 250} );
+
 const onSearchFormSubmit = async event => {
     event.preventDefault();
 
@@ -53,38 +55,38 @@ const onSearchFormSubmit = async event => {
       const response = await pixabayApi.fetchPhotos();
       const { data } = response;
 
-      console.dir(data)
       let totalPages = Math.ceil(data.total/40);
 
       if (totalPages === 0) {
         Notify.failure("Sorry, there are no images matching your search query. Please try again.", { fontSize: '18px', width: '250px'},)
         return;
       }
-  
-      if(totalPages !== 1){
-        Notify.success(`Hooray! We found ${data.total} images.`, { fontSize: '18px', width: '250px'},)
-      }
-  
-      galleryEl.insertAdjacentHTML("beforeend", createGalleryCards(data.hits));
-      
-      sectionObserver.observe(infiniteScrollEl);
 
+      if(totalPages > 1){
+      sectionObserver.observe(infiniteScrollEl);
+    }
+
+    Notify.success(`Hooray! We found ${data.totalHits} images.`, { fontSize: '18px', width: '250px'},) 
+    
+    galleryEl.insertAdjacentHTML("beforeend", createGalleryCards(data.hits));
+
+   gallery.refresh()
     } catch (err) {
       console.log(err);
     }
 }
 
-const onAclickOpenGallery = (event) => {
-  event.preventDefault() 
-  const {target} = event;
-      if (target.nodeName !== "IMG") {
-          return;
-  } 
-  new SimpleLightbox('.gallery a', {captionsData:"alt", captionDelay: 250} );
-}
+// const onAclickOpenGallery = (event) => {
+//   event.preventDefault() 
+//   const {target} = event;
+//       if (target.nodeName !== "IMG") {
+//           return;
+//   } 
+ 
+// }
 
 searchFormEl.addEventListener('submit', onSearchFormSubmit);
-galleryEl.addEventListener('click', onAclickOpenGallery);
+// galleryEl.addEventListener('click', onAclickOpenGallery);
 
 
 const sectionObserver = new IntersectionObserver( async (entries, sectionObserver) => {
@@ -98,9 +100,13 @@ const sectionObserver = new IntersectionObserver( async (entries, sectionObserve
       let totalPages = Math.ceil(data.total/40);
 
       galleryEl.insertAdjacentHTML('beforeend', createGalleryCards(data.hits));
+
+      gallery.refresh();
+
       if (totalPages === pixabayApi.page) {
         Notify.info("We're sorry, but you've reached the end of search results.", { fontSize: '16px', width: '250px'},)
         sectionObserver.unobserve(infiniteScrollEl)
+
       }
     } catch (err) {
       console.log(err);
@@ -112,4 +118,6 @@ const sectionObserver = new IntersectionObserver( async (entries, sectionObserve
   rootMargin: '0px 0px 400px 0px',
   threshold: 1,
 });
+
+
 
